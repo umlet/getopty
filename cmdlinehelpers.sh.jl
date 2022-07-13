@@ -62,14 +62,13 @@ module Exey
 export exe
 function exe(scmd::String; fail=true, okexits=[])
     cmd = Cmd(["bash", "-c", scmd])
-    out = Pipe()                                                            ; err = Pipe()
-    process = run(pipeline(cmd, stdout=out, stderr=err), wait=false);  wait(process);  exitcode = process.exitcode
-
-    close(out.in)                                                           ; close(err.in)
-    out0 = @async String(read(out))                                         ; err0 = @async String(read(err))
-    out1 = fetch(out0)                                                      ; err1 = fetch(err0)
-    length(out1) > 0  &&  last(out1) == '\n'  &&  (out1 = chop(out1))       ; length(err1) > 0  &&  last(err1) == '\n'  &&  (err1 = chop(err1))
-    outs = out1 != "" ? split(out1, '\n') : String[]                        ; errs = err1 != "" ? split(err1, '\n') : String[]
+    bufout = IOBuffer()                                                     ; buferr = IOBuffer()
+    process = run(pipeline(cmd, stdout=bufout, stderr=buferr), wait=false);  wait(process);  exitcode = process.exitcode
+    
+    out = String(take!(bufout))                                             ; err = String(take!(buferr))
+    close(bufout)                                                           ; close(buferr)
+    length(out) > 0  &&  last(out) == '\n'  &&  (out = chop(out))           ; length(err) > 0  &&  last(err) == '\n'  &&  (err = chop(err))
+    outs = out != "" ? split(out, '\n') : String[]                          ; errs = err != "" ? split(err, '\n') : String[]
 
     exitcode != 0  &&  !(exitcode in okexits)  &&  fail  &&  error("exe: OS system command failed: '$(scmd)'; stderr:\n$(err1)")
     return (; exitcode, outs, errs)
