@@ -45,11 +45,16 @@ end  # module
 module Convy
 export isint, isfloat, toint, tofloat, trytoint, trytofloat
 
+using Printf
+
 isint(x) = tryparse(Int64, x) !== nothing
 isfloat(x) = tryparse(Float64, x) !== nothing
 
 toint(x) = parse(Int64, x)
 tofloat(x) = parse(Float64, x)
+
+tostr(x::Int64) = string(x)
+tostr(x::Float64; fmt="%.2f") = Printf.format(Printf.Format(fmt), x)
 
 trytoint(x) = tryparse(Int64, x)
 trytofloat(x) = tryparse(Float64, x)
